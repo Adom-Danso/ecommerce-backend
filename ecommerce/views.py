@@ -156,7 +156,7 @@ def place_order():
 	# 	for i in cart_products:
 	# 		total_price += int(i.price)
 
-	delivery_details = f'{paymentAddress['address']}, {paymentAddress['city']}, {paymentAddress['country']}'
+	delivery_details = f"{paymentAddress['address']}, {paymentAddress['city']}, {paymentAddress['country']}"
 	if bool(paymentAddress['address2']):
 		delivery_details = f'{paymentAddress['address2']}, {delivery_details}'
 
