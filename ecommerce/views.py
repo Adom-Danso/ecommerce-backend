@@ -153,7 +153,7 @@ def place_order():
 
 	total_price = form.get('totalPrice')
 
-	delivery_details = paymentAddress['address'] + ', ' + paymentAddress['city'] + ', ' + paymentAddress['country']
+	delivery_details = paymentAddress.get('address') + ', ' + paymentAddress.get('city') + ', ' + paymentAddress.get('country')
 	if bool(paymentAddress['address2']):
 		delivery_details = f'{paymentAddress['address2']}, {delivery_details}'
 
