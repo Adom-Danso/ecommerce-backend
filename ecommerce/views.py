@@ -152,11 +152,8 @@ def place_order():
 		order[item.name] = item.price
 
 	total_price = form.get('totalPrice')
-	# if cart_products:
-	# 	for i in cart_products:
-	# 		total_price += int(i.price)
 
-	delivery_details = f"{paymentAddress['address']}, {paymentAddress['city']}, {paymentAddress['country']}"
+	delivery_details = paymentAddress['address'] + ', ' + paymentAddress['city'] + ', ' + paymentAddress['country']
 	if bool(paymentAddress['address2']):
 		delivery_details = f'{paymentAddress['address2']}, {delivery_details}'
 
