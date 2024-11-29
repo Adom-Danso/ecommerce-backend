@@ -155,7 +155,7 @@ def place_order():
 
 	delivery_details = paymentAddress.get('address') + ', ' + paymentAddress.get('city') + ', ' + paymentAddress.get('country')
 	if bool(paymentAddress['address2']):
-		delivery_details = f'{paymentAddress['address2']}, {delivery_details}'
+		delivery_details = f"{paymentAddress['address2']}, {delivery_details}"
 
 	new_order = Orders(user_id=user.id, username=f'{user.first_name} {user.last_name}', order_items=json.dumps(order), delivery_details=delivery_details, total_price=total_price)
 	new_order.generate_order_name(user_id)
