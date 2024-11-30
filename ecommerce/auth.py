@@ -7,6 +7,8 @@ auth = Blueprint('auth', __name__)
 @auth.route('/get_current_user', methods=['GET'])
 def get_current_user():
 	try:
+		if not session['user_id']:
+			session['user_id'] = ''
 		user_id = session['user_id']
 		if not user_id:
 			return jsonify({"message": "Unauthorized"}), 401

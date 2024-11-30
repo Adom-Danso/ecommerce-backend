@@ -7,6 +7,11 @@ import json, requests
 
 views = Blueprint('views', __name__)
 
+@views.route('/')
+def home():
+    return "Backend is up and running!"
+
+
 
 @views.route('/get_products', methods=['GET'])
 def get_products():
