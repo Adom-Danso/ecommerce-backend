@@ -1,7 +1,7 @@
 from flask import Flask, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import redis
+from redis.client import Redis
 from flask_session import Session
 import os
 from dotenv import load_dotenv
@@ -23,7 +23,7 @@ def create_app():
 	app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
 	app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = os.environ.get('SQLALCHEMY_TRACK_MODIFICATIONS')  # Fixed Typo
 	app.config['SESSION_TYPE'] = os.environ.get('SESSION_TYPE')
-	app.config['SESSION_REDIS'] = redis.from_url(os.environ.get('SESSION_REDIS'))
+	app.config['SESSION_REDIS'] = Redis(host='redis-188185-0.cloudclusters.net', port=10099)
 
 	
 
