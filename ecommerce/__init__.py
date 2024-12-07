@@ -23,7 +23,7 @@ def create_app():
 	app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
 	app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = os.environ.get('SQLALCHEMY_TRACK_MODIFICATIONS')  # Fixed Typo
 	app.config['SESSION_TYPE'] = os.environ.get('SESSION_TYPE')
-	app.config['SESSION_REDIS'] = Redis(host='redis-188185-0.cloudclusters.net', port=10099)
+	app.config['SESSION_REDIS'] = Redis(host='127.0.0.1', port=6379)
 
 	
 

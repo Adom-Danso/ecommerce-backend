@@ -24,18 +24,32 @@ def get_products():
 def cart():
 	user_id = session['user_id']
 	items = db.session.execute(db.select(Cart).filter_by(user_id=user_id)).scalars()
-	product_ids = [item.product_id for item in items]
-	cart_products = db.session.execute(db.select(Product).filter(Product.id.in_(product_ids)).order_by(Product.timestamp.desc())).scalars()
-	cart_products_list = [cart_product.to_json() for cart_product in cart_products] # list(cart_products)
-	no_of_items_in_cart = len(cart_products_list)
+	products = [{'id': item.product_id, 'quantity': item.quantity} for item in items]
+	product_ids = [product['id'] for product in products]  # Extract all product IDs
+	fetched_products = (
+	    db.session.execute(
+	        db.select(Product).filter(Product.id.in_(product_ids)).order_by(Product.timestamp.desc())
+	    ).scalars().all()
+	)
+
+	# Create a list of products with their quantities
+	cart_products = [
+	    {
+	        'product': product.to_json(),  # The Product object
+	        'quantity': next((p['quantity'] for p in products if p['id'] == product.id), 0)
+	    }
+	    for product in fetched_products
+	]
+
+	no_of_items_in_cart = len(cart_products)
 	total_price = 0
-	if cart_products_list:
-		for product in cart_products_list:
-			total_price += int(product['price'])
+	if cart_products:
+		for item in cart_products:
+			total_price += int(item['product']['price'])
 
 	return jsonify({
-		'products': cart_products_list, 
-		'totalPrice': total_price,	
+		'products': cart_products, 
+		'totalPrice': total_price,
 		'cartNumber': no_of_items_in_cart
 	})
 
@@ -44,12 +58,22 @@ def add_to_cart(id):
 	user_id = session['user_id']
 	product = db.session.execute(db.select(Cart).filter(and_(Cart.user_id == user_id, Cart.product_id == id))).scalars().first()
 	if product is None:
-		new_item = Cart(product_id=id, user_id=user_id)
+		new_item = Cart(product_id=id, user_id=user_id, quantity=request.json.get('quantity'))
 		db.session.add(new_item)
 		db.session.commit()
 
 	return jsonify({'message': 'succesfully added to cart'})
 
+@views.route('/empty-cart-items', methods=['DELETE'])
+def empty_cart():
+	user_id = session['user_id']
+
+	cart_items = db.session.execute(db.select(Cart).filter_by(user_id=user_id)).scalars()
+	if cart_items:
+		for item in cart_items: 
+			db.session.delete(item)
+	db.session.commit()
+	return jsonify({'message': 'Cart items have been deleted'})
 
 @views.route('/delete-cart-item/<int:id>', methods=['DELETE'])
 def remove_from_cart(id):
