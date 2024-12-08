@@ -77,8 +77,8 @@ def edit_profile():
 			user.last_name = form.get('lastName').strip()
 		if bool(form.get('phone')):
 			user.phone = form.get('phone').strip()
-		if bool(form.get('address')):
-			user.address = form.get('address').strip()
+		if bool(form.get('address1')):
+			user.address = form.get('address1').strip()
 		if bool(form.get('address2')):
 			user.address2 = form.get('address2').strip()
 		if bool(form.get('city')):

@@ -32,12 +32,14 @@ class User(db.Model):
 			"lastName": self.last_name,
 			"phone": self.phone,
 			"email": self.email,
-			"timestamp": self.timestamp,
+            "date": self.timestamp.strftime('%m/%d/%Y'),  # Format datetime to string
 			"address": self.address,
 			"address2": self.address2,
 			"city": self.city,
 			"zipCode": self.zip_code,
 			"country": self.country,
+			"date": self.timestamp,
+			"role": self.role,
 		}
 
 
@@ -84,7 +86,7 @@ class Product(db.Model):
 			"fashion": self.fashion,
 			"health_and_Beauty": self.health_and_Beauty,
 			"toys": self.toys,
-			"timestamp": self.timestamp,
+            "date": self.timestamp.strftime('%m/%d/%Y'),  # Format datetime to string
 			"image_name": self.image_name,
 		}
 
@@ -103,7 +105,7 @@ class Cart(db.Model):
 			"product_id": self.product_id,
 			"quantity": self.quantity,
 			"user_id": self.user_id,
-			"timestamp": self.timestamp
+            "date": self.timestamp.strftime('%m/%d/%Y'),  # Format datetime to string
 		}
 
 
@@ -119,7 +121,7 @@ class WishList(db.Model):
 			"id": self.id,
 			"product_id": self.product_id,
 			"user_id": self.user_id,
-			"timestamp": self.timestamp
+            "date": self.timestamp.strftime('%m/%d/%Y'),  # Format datetime to string
 		}
 
 
@@ -149,5 +151,7 @@ class Orders(db.Model):
 			"status": self.status,
 			"deliveryDetails": self.delivery_details,
 			"totalPrice": self.total_price,
-			"timestamp": self.timestamp
+            "date": self.timestamp.strftime('%m/%d/%Y'),  # Format datetime to string
 		}
+
+# id, userId, username, orderName, orderItems, status, deliveryDetails, totalPrice, date

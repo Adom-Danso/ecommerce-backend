@@ -11,8 +11,6 @@ views = Blueprint('views', __name__)
 def home():
     return "Backend is up and running!"
 
-
-
 @views.route('/get_products', methods=['GET'])
 def get_products():
 	products = Product.query.all()
@@ -145,55 +143,70 @@ def submit_ref_data():
 
 @views.route('/place-order', methods=['POST'])
 def place_order():
-	user_id = session['user_id']
-	user = db.session.get(User, user_id)
-	form = request.json
-	paymentAddress = form.get('paymentAddress')
-	pay_ref = form.get('paystackReference') # session['pay_ref']
+    user_id = session['user_id']
+    user = db.session.get(User, user_id)
+    form = request.json
+    paymentAddress = form.get('paymentAddress')
+    pay_ref = form.get('paystackReference')  # Get payment reference
 
-	if not pay_ref:
-		return jsonify({"message": "Payment reference missing. Please try again."}), 400
+    if not pay_ref:
+        return jsonify({"message": "Payment reference missing. Please try again."}), 400
 
-	# Verify payment with Paystack
-	headers = {
-		'Authorization': f"Bearer {app.config['PAYSTACK_SECRET_KEY']}",
-		'Content-Type': 'application/json',
-		}
-	response = requests.get(
-		f'https://api.paystack.co/transaction/verify/{pay_ref}',
-		headers=headers,
-		timeout=30
-	)
-	if response.status_code != 200:
-		return jsonify({'message': 'Payment verification failed due to network error.'}), 500
+    # Verify payment with Paystack
+    headers = {
+        'Authorization': f"Bearer {app.config['PAYSTACK_SECRET_KEY']}",
+        'Content-Type': 'application/json',
+    }
+    response = requests.get(
+        f'https://api.paystack.co/transaction/verify/{pay_ref}',
+        headers=headers,
+        timeout=30
+    )
+    if response.status_code != 200:
+        return jsonify({'message': 'Payment verification failed due to network error.'}), 500
 
-	response_data = response.json()
-	if not response_data.get('status') or response_data['data']['status'] != 'success':
-		return jsonify({'message': 'Payment verification failed. Please try again.'})
+    response_data = response.json()
+    if not response_data.get('status') or response_data['data']['status'] != 'success':
+        return jsonify({'message': 'Payment verification failed. Please try again.'})
 
-	#==============if payment was a success, create an order===========
-	cart_items = list(db.session.execute(db.select(Cart).filter(Cart.user_id == user_id)).scalars())
-	product_ids = [item.product_id for item in cart_items]
-	cart_products = list(db.session.execute(db.select(Product).filter(Product.id.in_(product_ids))).scalars())
+    # Fetch cart items and calculate total price on the server
+    cart_items = list(db.session.execute(db.select(Cart).filter(Cart.user_id == user_id)).scalars())
+    product_ids = [item.product_id for item in cart_items]
+    cart_products = list(db.session.execute(db.select(Product).filter(Product.id.in_(product_ids))).scalars())
 
-	order = {}
-	for item in cart_products:
-		order[item.name] = item.price
+    server_total_price = 0
+    order_items = {}
+    for item in cart_products:
+        quantity = next((cart_item.quantity for cart_item in cart_items if cart_item.product_id == item.id), 1)
+        item_total = item.price * quantity
+        server_total_price += item_total
+        order_items[item.name] = {"price": item.price, "quantity": quantity}
 
-	total_price = form.get('totalPrice')
+    # Compare server-calculated total with Paystack amount
+    paystack_amount = response_data['data']['amount'] / 100  # Convert to base currency (e.g., Naira)
+    if server_total_price != paystack_amount:
+        return jsonify({'message': 'Payment amount mismatch. Please try again.'}), 400
 
-	delivery_details = paymentAddress.get('address') + ', ' + paymentAddress.get('city') + ', ' + paymentAddress.get('country')
-	if bool(paymentAddress['address2']):
-		delivery_details = f"{paymentAddress['address2']}, {delivery_details}"
+    # Format delivery details
+    delivery_details = paymentAddress.get('address') + ', ' + paymentAddress.get('city') + ', ' + paymentAddress.get('country')
+    if bool(paymentAddress.get('address2')):
+        delivery_details = f"{paymentAddress['address2']}, {delivery_details}"
 
-	new_order = Orders(user_id=user.id, username=f'{user.first_name} {user.last_name}', order_items=json.dumps(order), delivery_details=delivery_details, total_price=total_price)
-	new_order.generate_order_name(user_id)
+    # Create and save the order
+    new_order = Orders(
+        user_id=user.id,
+        username=f'{user.first_name} {user.last_name}',
+        order_items=json.dumps(order_items),
+        delivery_details=delivery_details,
+        total_price=server_total_price
+    )
+    new_order.generate_order_name(user_id)
 
-	db.session.add(new_order)
+    db.session.add(new_order)
 
-	#==========delete items from the cart and then commit to the database===========
-	for item in cart_items:
-		db.session.delete(item)
+    # Remove cart items
+    for item in cart_items:
+        db.session.delete(item)
 
-	db.session.commit()
-	return jsonify({'message': 'Order has been placed'}), 201
+    db.session.commit()
+    return jsonify({'message': 'Order has been placed'}), 201
